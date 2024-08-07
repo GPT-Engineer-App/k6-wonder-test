@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { Cat, Paw, Heart, Eye, Ear, MessageCircle, Facebook, Twitter, Instagram, ArrowRight, Check, X, Moon, Sun } from "lucide-react";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Cat, Paw, Heart, Eye, Ear, MessageCircle, Facebook, Twitter, Instagram, ArrowRight, Check, X, Moon, Sun, Camera, Sparkles } from "lucide-react";
+import { motion, useScroll, useTransform, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,11 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/components/ui/use-toast";
+import confetti from 'canvas-confetti';
 
 const catCharacteristics = [
   { icon: <Paw className="h-6 w-6" />, text: "Excellent hunters with sharp claws and teeth" },
@@ -19,11 +24,11 @@ const catCharacteristics = [
 ];
 
 const catBreeds = [
-  { name: "Siamese", description: "Known for their distinctive color points and vocal nature.", image: "https://upload.wikimedia.org/wikipedia/commons/2/25/Siam_lilacpoint.jpg", personality: "Talkative, intelligent, and social", lifespan: "12-15 years" },
-  { name: "Persian", description: "Recognized for their long, luxurious coat and flat face.", image: "https://upload.wikimedia.org/wikipedia/commons/1/15/White_Persian_Cat.jpg", personality: "Calm, gentle, and affectionate", lifespan: "10-17 years" },
-  { name: "Maine Coon", description: "One of the largest domestic cat breeds with a friendly personality.", image: "https://upload.wikimedia.org/wikipedia/commons/5/5f/Maine_Coon_cat_by_Tomitheos.JPG", personality: "Friendly, playful, and good with children", lifespan: "9-15 years" },
-  { name: "British Shorthair", description: "Characterized by their round face and dense, plush coat.", image: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Britishblue.jpg", personality: "Easygoing, calm, and independent", lifespan: "12-20 years" },
-  { name: "Scottish Fold", description: "Famous for their unique folded ears and owl-like appearance.", image: "https://upload.wikimedia.org/wikipedia/commons/5/5d/Adult_Scottish_Fold.jpg", personality: "Sweet-tempered, adaptable, and intelligent", lifespan: "11-14 years" },
+  { name: "Siamese", description: "Known for their distinctive color points and vocal nature.", image: "https://upload.wikimedia.org/wikipedia/commons/2/25/Siam_lilacpoint.jpg", personality: "Talkative, intelligent, and social", lifespan: "12-15 years", affectionLevel: 85, energyLevel: 70, groomingNeeds: 30, intelligence: 90 },
+  { name: "Persian", description: "Recognized for their long, luxurious coat and flat face.", image: "https://upload.wikimedia.org/wikipedia/commons/1/15/White_Persian_Cat.jpg", personality: "Calm, gentle, and affectionate", lifespan: "10-17 years", affectionLevel: 75, energyLevel: 40, groomingNeeds: 90, intelligence: 70 },
+  { name: "Maine Coon", description: "One of the largest domestic cat breeds with a friendly personality.", image: "https://upload.wikimedia.org/wikipedia/commons/5/5f/Maine_Coon_cat_by_Tomitheos.JPG", personality: "Friendly, playful, and good with children", lifespan: "9-15 years", affectionLevel: 80, energyLevel: 60, groomingNeeds: 60, intelligence: 85 },
+  { name: "British Shorthair", description: "Characterized by their round face and dense, plush coat.", image: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Britishblue.jpg", personality: "Easygoing, calm, and independent", lifespan: "12-20 years", affectionLevel: 60, energyLevel: 50, groomingNeeds: 40, intelligence: 75 },
+  { name: "Scottish Fold", description: "Famous for their unique folded ears and owl-like appearance.", image: "https://upload.wikimedia.org/wikipedia/commons/5/5d/Adult_Scottish_Fold.jpg", personality: "Sweet-tempered, adaptable, and intelligent", lifespan: "11-14 years", affectionLevel: 70, energyLevel: 55, groomingNeeds: 50, intelligence: 80 },
 ];
 
 const catCareItems = [
@@ -41,6 +46,9 @@ const Index = () => {
   const [quizScore, setQuizScore] = useState(0);
   const [quizTotal, setQuizTotal] = useState(0);
   const [darkMode, setDarkMode] = useState(false);
+  const [userAnswer, setUserAnswer] = useState("");
+  const [showConfetti, setShowConfetti] = useState(false);
+  const { toast } = useToast();
 
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -51,9 +59,23 @@ const Index = () => {
   const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 1], [1, 0.8]);
 
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const smoothMouseX = useSpring(mouseX, { stiffness: 300, damping: 30 });
+  const smoothMouseY = useSpring(mouseY, { stiffness: 300, damping: 30 });
+
+  const handleMouseMove = useCallback((e) => {
+    const { clientX, clientY } = e;
+    mouseX.set(clientX);
+    mouseY.set(clientY);
+  }, [mouseX, mouseY]);
+
   useEffect(() => {
     document.body.classList.toggle('dark', darkMode);
-  }, [darkMode]);
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [darkMode, handleMouseMove]);
 
   const generateFunFact = () => {
     const facts = [
@@ -75,12 +97,26 @@ const Index = () => {
       { question: "What is the proper term for a male cat?", answer: "Tom" },
     ];
     setQuizQuestion(questions[Math.floor(Math.random() * questions.length)]);
+    setUserAnswer("");
   };
 
-  const handleQuizAnswer = (userAnswer) => {
+  const handleQuizAnswer = () => {
     setQuizTotal(quizTotal + 1);
     if (userAnswer.toLowerCase() === quizQuestion.answer.toLowerCase()) {
       setQuizScore(quizScore + 1);
+      setShowConfetti(true);
+      toast({
+        title: "Correct!",
+        description: "Great job! You got it right!",
+        duration: 3000,
+      });
+      setTimeout(() => setShowConfetti(false), 3000);
+    } else {
+      toast({
+        title: "Incorrect",
+        description: `The correct answer was: ${quizQuestion.answer}`,
+        duration: 3000,
+      });
     }
     generateQuizQuestion();
   };
@@ -92,6 +128,16 @@ const Index = () => {
     generateQuizQuestion();
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (showConfetti) {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+  }, [showConfetti]);
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-b from-blue-100 to-purple-100'}`}>
@@ -187,8 +233,8 @@ const Index = () => {
                 {catBreeds.map((breed, index) => (
                   <CarouselItem key={index}>
                     <div className="p-1">
-                      <Card className={darkMode ? 'bg-gray-800' : ''}>
-                        <CardContent className="flex aspect-square items-center justify-center p-6">
+                      <Card className={`${darkMode ? 'bg-gray-800' : ''} overflow-hidden`}>
+                        <CardContent className="flex aspect-square items-center justify-center p-6 relative">
                           <motion.div 
                             className="text-center"
                             initial={{ opacity: 0, y: 20 }}
@@ -199,6 +245,10 @@ const Index = () => {
                             <h3 className="text-2xl font-semibold mb-2">{breed.name}</h3>
                             <p>{breed.description}</p>
                           </motion.div>
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 opacity-0 hover:opacity-20 transition-opacity duration-300"
+                            whileHover={{ opacity: 0.2 }}
+                          />
                         </CardContent>
                       </Card>
                     </div>
@@ -213,35 +263,73 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <h3 className="text-2xl font-semibold mb-4">{catBreeds[currentBreedIndex].name}</h3>
-                <img src={catBreeds[currentBreedIndex].image} alt={catBreeds[currentBreedIndex].name} className="w-full h-64 object-cover rounded-lg mb-4" />
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <img src={catBreeds[currentBreedIndex].image} alt={catBreeds[currentBreedIndex].name} className="w-full h-64 object-cover rounded-lg mb-4 shadow-lg" />
+                </motion.div>
                 <p className="mb-2">{catBreeds[currentBreedIndex].description}</p>
                 <p className="mb-2"><strong>Personality:</strong> {catBreeds[currentBreedIndex].personality}</p>
                 <p><strong>Average Lifespan:</strong> {catBreeds[currentBreedIndex].lifespan}</p>
               </div>
               <div>
                 <h3 className="text-2xl font-semibold mb-4">Breed Characteristics</h3>
-                <ul className="space-y-2">
+                <ul className="space-y-4">
                   <li>
                     <strong>Affection Level:</strong>
-                    <Progress value={75} className="mt-2" />
+                    <Progress value={catBreeds[currentBreedIndex].affectionLevel} className="mt-2" />
                   </li>
                   <li>
                     <strong>Energy Level:</strong>
-                    <Progress value={60} className="mt-2" />
+                    <Progress value={catBreeds[currentBreedIndex].energyLevel} className="mt-2" />
                   </li>
                   <li>
                     <strong>Grooming Needs:</strong>
-                    <Progress value={40} className="mt-2" />
+                    <Progress value={catBreeds[currentBreedIndex].groomingNeeds} className="mt-2" />
                   </li>
                   <li>
                     <strong>Intelligence:</strong>
-                    <Progress value={85} className="mt-2" />
+                    <Progress value={catBreeds[currentBreedIndex].intelligence} className="mt-2" />
                   </li>
                 </ul>
               </div>
             </div>
           </TabsContent>
         </Tabs>
+
+        <motion.div 
+          className="mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <h2 className="text-4xl font-semibold mb-8 text-center">Cat Photo Booth</h2>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="mx-auto block">
+                <Camera className="mr-2 h-4 w-4" /> Open Photo Booth
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Cat Photo Booth</DialogTitle>
+                <DialogDescription>
+                  Take a picture with your cat or upload one!
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="picture" className="text-right">
+                    Picture
+                  </Label>
+                  <Input id="picture" type="file" accept="image/*" className="col-span-3" />
+                </div>
+              </div>
+              <Button type="submit">Upload</Button>
+            </DialogContent>
+          </Dialog>
+        </motion.div>
 
         <motion.h2 
           initial={{ opacity: 0, y: 20 }}
@@ -273,28 +361,41 @@ const Index = () => {
           whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <Card className="mb-12">
+          <Card className="mb-12 relative overflow-hidden">
             <CardContent className="p-8">
               {quizQuestion && (
                 <>
-                  <p className="text-xl mb-6 text-center">{quizQuestion.question}</p>
+                  <p className="text-xl mb-6 text-center font-semibold">{quizQuestion.question}</p>
                   <div className="flex justify-center space-x-4">
-                    <input
+                    <Input
                       type="text"
                       placeholder="Your answer"
-                      className="border p-2 rounded"
-                      onKeyPress={(e) => e.key === 'Enter' && handleQuizAnswer(e.target.value)}
+                      value={userAnswer}
+                      onChange={(e) => setUserAnswer(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleQuizAnswer()}
+                      className="max-w-xs"
                     />
-                    <Button onClick={() => handleQuizAnswer(document.querySelector('input').value)}>
+                    <Button onClick={handleQuizAnswer}>
                       Submit
                     </Button>
                   </div>
-                  <p className="text-center mt-4">
+                  <motion.p 
+                    className="text-center mt-6 text-lg font-semibold"
+                    initial={{ scale: 1 }}
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 0.5 }}
+                  >
                     Score: {quizScore} / {quizTotal}
-                  </p>
+                  </motion.p>
                 </>
               )}
             </CardContent>
+            <motion.div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `radial-gradient(circle at ${smoothMouseX}px ${smoothMouseY}px, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 50%)`,
+              }}
+            />
           </Card>
         </motion.div>
 
@@ -311,17 +412,40 @@ const Index = () => {
           whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <Card className="mb-12">
+          <Card className="mb-12 relative overflow-hidden">
             <CardContent className="p-8">
-              <p className="text-xl mb-6 text-center">{funFact}</p>
+              <motion.p 
+                className="text-xl mb-6 text-center"
+                key={funFact}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5 }}
+              >
+                {funFact}
+              </motion.p>
               <div className="flex justify-center">
                 <Button onClick={generateFunFact} size="lg">
-                  Generate New Fact
+                  <Sparkles className="mr-2 h-4 w-4" /> Generate New Fact
                 </Button>
               </div>
             </CardContent>
+            <motion.div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `radial-gradient(circle at ${smoothMouseX}px ${smoothMouseY}px, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 50%)`,
+              }}
+            />
           </Card>
         </motion.div>
+
+        <Alert className="mb-12">
+          <Cat className="h-4 w-4" />
+          <AlertTitle>Did you know?</AlertTitle>
+          <AlertDescription>
+            Cats have been domesticated for over 4,000 years, but they still retain many of their wild instincts!
+          </AlertDescription>
+        </Alert>
 
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
