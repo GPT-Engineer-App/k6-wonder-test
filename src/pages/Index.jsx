@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
-import { Cat, Paw, Heart, Eye, Ear, MessageCircle, Facebook, Twitter, Instagram, ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { Cat, Paw, Heart, Eye, Ear, MessageCircle, Facebook, Twitter, Instagram, ArrowRight, Check, X } from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const catCharacteristics = [
   { icon: <Paw className="h-6 w-6" />, text: "Excellent hunters with sharp claws and teeth" },
@@ -15,16 +17,36 @@ const catCharacteristics = [
 ];
 
 const catBreeds = [
-  { name: "Siamese", description: "Known for their distinctive color points and vocal nature.", image: "https://upload.wikimedia.org/wikipedia/commons/2/25/Siam_lilacpoint.jpg" },
-  { name: "Persian", description: "Recognized for their long, luxurious coat and flat face.", image: "https://upload.wikimedia.org/wikipedia/commons/1/15/White_Persian_Cat.jpg" },
-  { name: "Maine Coon", description: "One of the largest domestic cat breeds with a friendly personality.", image: "https://upload.wikimedia.org/wikipedia/commons/5/5f/Maine_Coon_cat_by_Tomitheos.JPG" },
-  { name: "British Shorthair", description: "Characterized by their round face and dense, plush coat.", image: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Britishblue.jpg" },
-  { name: "Scottish Fold", description: "Famous for their unique folded ears and owl-like appearance.", image: "https://upload.wikimedia.org/wikipedia/commons/5/5d/Adult_Scottish_Fold.jpg" },
+  { name: "Siamese", description: "Known for their distinctive color points and vocal nature.", image: "https://upload.wikimedia.org/wikipedia/commons/2/25/Siam_lilacpoint.jpg", personality: "Talkative, intelligent, and social", lifespan: "12-15 years" },
+  { name: "Persian", description: "Recognized for their long, luxurious coat and flat face.", image: "https://upload.wikimedia.org/wikipedia/commons/1/15/White_Persian_Cat.jpg", personality: "Calm, gentle, and affectionate", lifespan: "10-17 years" },
+  { name: "Maine Coon", description: "One of the largest domestic cat breeds with a friendly personality.", image: "https://upload.wikimedia.org/wikipedia/commons/5/5f/Maine_Coon_cat_by_Tomitheos.JPG", personality: "Friendly, playful, and good with children", lifespan: "9-15 years" },
+  { name: "British Shorthair", description: "Characterized by their round face and dense, plush coat.", image: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Britishblue.jpg", personality: "Easygoing, calm, and independent", lifespan: "12-20 years" },
+  { name: "Scottish Fold", description: "Famous for their unique folded ears and owl-like appearance.", image: "https://upload.wikimedia.org/wikipedia/commons/5/5d/Adult_Scottish_Fold.jpg", personality: "Sweet-tempered, adaptable, and intelligent", lifespan: "11-14 years" },
+];
+
+const catCareItems = [
+  { title: "Nutrition", content: "Provide a balanced diet with high-quality cat food. Ensure fresh water is always available." },
+  { title: "Grooming", content: "Brush your cat regularly to prevent matting and hairballs. Trim nails as needed." },
+  { title: "Exercise", content: "Encourage play with toys and interactive games to keep your cat physically and mentally stimulated." },
+  { title: "Health Check-ups", content: "Schedule regular vet visits for vaccinations and health screenings." },
+  { title: "Litter Box Maintenance", content: "Clean the litter box daily and provide enough boxes for multi-cat households." },
 ];
 
 const Index = () => {
   const [funFact, setFunFact] = useState("Cats sleep for about 70% of their lives.");
   const [currentBreedIndex, setCurrentBreedIndex] = useState(0);
+  const [quizQuestion, setQuizQuestion] = useState(null);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizTotal, setQuizTotal] = useState(0);
+
+  const heroRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"]
+  });
+
+  const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.8]);
 
   const generateFunFact = () => {
     const facts = [
@@ -37,21 +59,42 @@ const Index = () => {
     setFunFact(facts[Math.floor(Math.random() * facts.length)]);
   };
 
+  const generateQuizQuestion = () => {
+    const questions = [
+      { question: "What is a group of cats called?", answer: "Clowder" },
+      { question: "How many hours do cats typically sleep in a day?", answer: "16" },
+      { question: "What is the average lifespan of a domestic cat?", answer: "15" },
+      { question: "Which cat breed is known for its lack of tail?", answer: "Manx" },
+      { question: "What is the proper term for a male cat?", answer: "Tom" },
+    ];
+    setQuizQuestion(questions[Math.floor(Math.random() * questions.length)]);
+  };
+
+  const handleQuizAnswer = (userAnswer) => {
+    setQuizTotal(quizTotal + 1);
+    if (userAnswer.toLowerCase() === quizQuestion.answer.toLowerCase()) {
+      setQuizScore(quizScore + 1);
+    }
+    generateQuizQuestion();
+  };
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBreedIndex((prevIndex) => (prevIndex + 1) % catBreeds.length);
     }, 5000);
+    generateQuizQuestion();
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-purple-100">
       <motion.div 
+        ref={heroRef}
+        style={{ opacity, scale }}
+        className="relative h-screen bg-cover bg-center flex items-center justify-center sticky top-0"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
-        className="relative h-screen bg-cover bg-center flex items-center justify-center"
-        style={{backgroundImage: "url('https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80')"}}
       >
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <motion.h1 
@@ -118,27 +161,122 @@ const Index = () => {
         >
           Popular Cat Breeds
         </motion.h2>
-        <Carousel className="mb-16">
-          <CarouselContent>
-            {catBreeds.map((breed, index) => (
-              <CarouselItem key={index}>
-                <div className="p-1">
-                  <Card>
-                    <CardContent className="flex aspect-square items-center justify-center p-6">
-                      <div className="text-center">
-                        <img src={breed.image} alt={breed.name} className="w-full h-64 object-cover rounded-lg mb-4" />
-                        <h3 className="text-2xl font-semibold mb-2">{breed.name}</h3>
-                        <p>{breed.description}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
-        </Carousel>
+        <Tabs defaultValue="gallery" className="mb-16">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="gallery">Gallery</TabsTrigger>
+            <TabsTrigger value="explorer">Breed Explorer</TabsTrigger>
+          </TabsList>
+          <TabsContent value="gallery">
+            <Carousel>
+              <CarouselContent>
+                {catBreeds.map((breed, index) => (
+                  <CarouselItem key={index}>
+                    <div className="p-1">
+                      <Card>
+                        <CardContent className="flex aspect-square items-center justify-center p-6">
+                          <div className="text-center">
+                            <img src={breed.image} alt={breed.name} className="w-full h-64 object-cover rounded-lg mb-4" />
+                            <h3 className="text-2xl font-semibold mb-2">{breed.name}</h3>
+                            <p>{breed.description}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
+          </TabsContent>
+          <TabsContent value="explorer">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <h3 className="text-2xl font-semibold mb-4">{catBreeds[currentBreedIndex].name}</h3>
+                <img src={catBreeds[currentBreedIndex].image} alt={catBreeds[currentBreedIndex].name} className="w-full h-64 object-cover rounded-lg mb-4" />
+                <p className="mb-2">{catBreeds[currentBreedIndex].description}</p>
+                <p className="mb-2"><strong>Personality:</strong> {catBreeds[currentBreedIndex].personality}</p>
+                <p><strong>Average Lifespan:</strong> {catBreeds[currentBreedIndex].lifespan}</p>
+              </div>
+              <div>
+                <h3 className="text-2xl font-semibold mb-4">Breed Characteristics</h3>
+                <ul className="space-y-2">
+                  <li>
+                    <strong>Affection Level:</strong>
+                    <Progress value={75} className="mt-2" />
+                  </li>
+                  <li>
+                    <strong>Energy Level:</strong>
+                    <Progress value={60} className="mt-2" />
+                  </li>
+                  <li>
+                    <strong>Grooming Needs:</strong>
+                    <Progress value={40} className="mt-2" />
+                  </li>
+                  <li>
+                    <strong>Intelligence:</strong>
+                    <Progress value={85} className="mt-2" />
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <motion.h2 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-4xl font-semibold mb-8 text-center"
+        >
+          Cat Care Tips
+        </motion.h2>
+        <Accordion type="single" collapsible className="mb-16">
+          {catCareItems.map((item, index) => (
+            <AccordionItem key={index} value={`item-${index}`}>
+              <AccordionTrigger>{item.title}</AccordionTrigger>
+              <AccordionContent>{item.content}</AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+
+        <motion.h2 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-4xl font-semibold mb-8 text-center"
+        >
+          Cat Quiz
+        </motion.h2>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="mb-12">
+            <CardContent className="p-8">
+              {quizQuestion && (
+                <>
+                  <p className="text-xl mb-6 text-center">{quizQuestion.question}</p>
+                  <div className="flex justify-center space-x-4">
+                    <input
+                      type="text"
+                      placeholder="Your answer"
+                      className="border p-2 rounded"
+                      onKeyPress={(e) => e.key === 'Enter' && handleQuizAnswer(e.target.value)}
+                    />
+                    <Button onClick={() => handleQuizAnswer(document.querySelector('input').value)}>
+                      Submit
+                    </Button>
+                  </div>
+                  <p className="text-center mt-4">
+                    Score: {quizScore} / {quizTotal}
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
 
         <motion.h2 
           initial={{ opacity: 0, y: 20 }}
