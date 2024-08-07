@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from "react";
-import { Cat, Paw, Heart, Eye, Ear, MessageCircle, Facebook, Twitter, Instagram, ArrowRight, Check, X } from "lucide-react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { Cat, Paw, Heart, Eye, Ear, MessageCircle, Facebook, Twitter, Instagram, ArrowRight, Check, X, Moon, Sun } from "lucide-react";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const catCharacteristics = [
   { icon: <Paw className="h-6 w-6" />, text: "Excellent hunters with sharp claws and teeth" },
@@ -38,6 +40,7 @@ const Index = () => {
   const [quizQuestion, setQuizQuestion] = useState(null);
   const [quizScore, setQuizScore] = useState(0);
   const [quizTotal, setQuizTotal] = useState(0);
+  const [darkMode, setDarkMode] = useState(false);
 
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -47,6 +50,10 @@ const Index = () => {
 
   const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 1], [1, 0.8]);
+
+  useEffect(() => {
+    document.body.classList.toggle('dark', darkMode);
+  }, [darkMode]);
 
   const generateFunFact = () => {
     const facts = [
@@ -87,7 +94,14 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-100 to-purple-100">
+    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-b from-blue-100 to-purple-100'}`}>
+      <div className="fixed top-4 right-4 z-50">
+        <div className="flex items-center space-x-2">
+          <Sun className="h-4 w-4" />
+          <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+          <Moon className="h-4 w-4" />
+        </div>
+      </div>
       <motion.div 
         ref={heroRef}
         style={{ opacity, scale }}
@@ -96,7 +110,7 @@ const Index = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
       >
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className={`absolute inset-0 ${darkMode ? 'bg-gray-800' : 'bg-black'} bg-opacity-50 flex items-center justify-center`}>
           <motion.h1 
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -112,7 +126,7 @@ const Index = () => {
           transition={{ delay: 1, duration: 0.8 }}
           className="absolute bottom-10 left-1/2 transform -translate-x-1/2"
         >
-          <Button variant="outline" size="lg" className="bg-white bg-opacity-20 backdrop-blur-lg">
+          <Button variant="outline" size="lg" className="bg-white bg-opacity-20 backdrop-blur-lg hover:bg-opacity-30 transition-all duration-300">
             Explore More <ArrowRight className="ml-2" />
           </Button>
         </motion.div>
@@ -143,9 +157,10 @@ const Index = () => {
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center text-center hover:shadow-xl transition-shadow duration-300"
+              whileHover={{ scale: 1.05 }}
+              className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-8 rounded-lg shadow-lg flex flex-col items-center text-center hover:shadow-xl transition-all duration-300`}
             >
-              <div className="bg-purple-100 p-4 rounded-full mb-4">
+              <div className={`${darkMode ? 'bg-purple-900' : 'bg-purple-100'} p-4 rounded-full mb-4`}>
                 {char.icon}
               </div>
               <span className="text-lg">{char.text}</span>
@@ -172,13 +187,18 @@ const Index = () => {
                 {catBreeds.map((breed, index) => (
                   <CarouselItem key={index}>
                     <div className="p-1">
-                      <Card>
+                      <Card className={darkMode ? 'bg-gray-800' : ''}>
                         <CardContent className="flex aspect-square items-center justify-center p-6">
-                          <div className="text-center">
+                          <motion.div 
+                            className="text-center"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                          >
                             <img src={breed.image} alt={breed.name} className="w-full h-64 object-cover rounded-lg mb-4" />
                             <h3 className="text-2xl font-semibold mb-2">{breed.name}</h3>
                             <p>{breed.description}</p>
-                          </div>
+                          </motion.div>
                         </CardContent>
                       </Card>
                     </div>
@@ -313,9 +333,16 @@ const Index = () => {
         </motion.p>
       </div>
 
-      <footer className="bg-gray-800 text-white py-12">
+      <footer className={`${darkMode ? 'bg-gray-900' : 'bg-gray-800'} text-white py-12`}>
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-lg mb-4 md:mb-0">&copy; 2023 All About Cats</p>
+          <motion.p 
+            className="text-lg mb-4 md:mb-0"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            &copy; 2023 All About Cats
+          </motion.p>
           <div className="flex space-x-6">
             <motion.div whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }}>
               <Facebook className="h-8 w-8 cursor-pointer" />
